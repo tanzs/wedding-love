@@ -1,0 +1,22 @@
+# Refer https://docs.halo.run/developer-guide/plugin/basics/manifest
+
+apiVersion: plugin.halo.run/v1alpha1
+kind: Plugin
+metadata:
+  # The name defines how the plugin is invoked, A unique name
+  name: wedding-love
+spec:
+  enabled: true
+  requires: ">=2.21.0"
+  author:
+    name: Tanzs
+    website: https://github.com/Tanzs
+  logo: logo.png
+  homepage: https://github.com/Tanzs/wedding-love#readme
+  repo: https://github.com/Tanzs/wedding-love
+  issues: https://github.com/Tanzs/wedding-love/issues
+  displayName: "wedding-love"
+  description: "wedding-love - Halo 插件"
+  license:
+    - name: "GPL-3.0"
+      url: "https://github.com/Tanzs/wedding-love/blob/main/LICENSE"
