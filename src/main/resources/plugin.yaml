@@ -1,6 +1,6 @@
 # Refer https://docs.halo.run/developer-guide/plugin/basics/manifest
 
-apiVersion: plugin.halo.run/v1alpha1
+apiVersion: wedding.aiym.fun/v1alpha1
 kind: Plugin
 metadata:
   # The name defines how the plugin is invoked, A unique name
@@ -10,13 +10,15 @@ spec:
   requires: ">=2.21.0"
   author:
     name: Tanzs
-    website: https://github.com/Tanzs
-  logo: logo.png
+    website: https://mblog.aiym.fun
+  logo: logo.svg
   homepage: https://github.com/Tanzs/wedding-love#readme
   repo: https://github.com/Tanzs/wedding-love
   issues: https://github.com/Tanzs/wedding-love/issues
-  displayName: "wedding-love"
-  description: "wedding-love - Halo 插件"
+  displayName: "Love时刻"
+  description: "为新人打造专属的婚礼互动插件"
+  configMapName: wedding-setting-configmap
+  settingName: wedding-setting
   license:
     - name: "GPL-3.0"
       url: "https://github.com/Tanzs/wedding-love/blob/main/LICENSE"

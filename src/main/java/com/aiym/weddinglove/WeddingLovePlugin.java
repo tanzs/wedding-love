@@ -1,5 +1,6 @@
 package com.aiym.weddinglove;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import run.halo.app.plugin.BasePlugin;
 import run.halo.app.plugin.PluginContext;
@@ -13,7 +14,9 @@ import run.halo.app.plugin.PluginContext;
  * @since 1.0.0
  */
 @Component
+@RequiredArgsConstructor
 public class WeddingLovePlugin extends BasePlugin {
+
 
     public WeddingLovePlugin(PluginContext pluginContext) {
         super(pluginContext);
@@ -22,10 +25,12 @@ public class WeddingLovePlugin extends BasePlugin {
     @Override
     public void start() {
         System.out.println("插件启动成功！");
+        // schemeManager.register(AttendanceExtension.class);
     }
 
     @Override
     public void stop() {
         System.out.println("插件停止！");
+        // schemeManager.unregister(Scheme.buildFromType(AttendanceExtension.class));
     }
 }

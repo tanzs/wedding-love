@@ -1,0 +1,286 @@
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: wedding-setting
+spec:
+  forms:
+    # =====================
+    # 基础设置
+    # =====================
+    - group: basic
+      label: 基础设置
+      formSchema:
+        - $formkit: text
+          id: groomName
+          name: groomName
+          label: 新郎姓名
+          placeholder: 请输入新郎姓名
+          value: 朱迪
+          validation: required
+        - $formkit: text
+          id: brideName
+          name: brideName
+          label: 新娘姓名
+          placeholder: 请输入新娘姓名
+          value: 小梅
+          validation: required
+        - $formkit: datetime-local
+          id: weddingDate
+          name: weddingDate
+          label: 婚期
+          value: "2026-10-01 12:00"
+        - $formkit: text
+          id: weddingLocation
+          name: weddingLocation
+          label: 婚礼地点
+          placeholder: 请输入婚礼地点
+          value: 上海·外滩茂悦酒店
+        - $formkit: attachment
+          id: shareImage
+          name: shareImage
+          label: 分享图
+          value: ""
+          placeholder: 请输入分享图URL或者选择附近中图片
+        - $formkit: text
+          id: mapLocation
+          name: mapLocation
+          label: 地图位置（经度,纬度）
+          placeholder: "例如: 116.397128,39.916527"
+          value: ""
+        - $formkit: radio
+          id: enableWeather
+          name: enableWeather
+          label: 启用天气显示
+          value: false
+          options:
+            - value: true
+              label: 开启
+            - value: false
+              label: 关闭
+        - $formkit: text
+          if: $get(enableWeather).value === true
+          id: cityName
+          name: cityName
+          label: 城市名称
+          placeholder: 用于天气查询
+          value: 上海
+          validation: required
+
+    # =====================
+    # 流程节点配置
+    # =====================
+    - group: timeline
+      id: timeline
+      name: timeline
+      label: 流程节点配置
+      formSchema:
+        - $formkit: repeater
+          id: timelineNodes
+          name: timelineNodes
+          max: 10
+          label: 流程列表
+          value:
+            # 修正：将所有时间值用引号包裹，确保它们是字符串
+            - title: "接亲出发"
+              description: "前往新娘家接亲"
+              type: "timepoint"
+              startTime: "06:30"
+            - title: "婚礼仪式"
+              description: "正式举行婚礼仪式"
+              type: "timespan"
+              startTime: "11:30"
+              endTime: "12:00"
+          children:
+            - $formkit: text
+              id: title
+              name: title
+              label: 节点标题
+            - $formkit: textarea
+              id: description
+              name: description
+              label: 节点描述
+            - $formkit: select
+              id: type
+              name: type
+              label: 节点类型
+              value: timepoint
+              options:
+                - label: 时间点
+                  value: timepoint
+                - label: 时间段
+                  value: timespan
+            - $formkit: time
+              id: startTime
+              name: startTime
+              label: 开始时间
+            - $formkit: time
+              if: '$node.value.type == "timespan"'
+              id: endTime
+              name: endTime
+              label: 结束时间
+
+    # =====================
+    # 相册配置
+    # =====================
+    - group: album
+      label: 相册配置
+      formSchema:
+        - $formkit: select
+          id: galleryName
+          name: galleryName
+          key: galleryName
+          label: 相册展示图库
+          multiple: true
+          clearable: true
+          action: /apis/console.api.photo.halo.run/v1alpha1/photogroups
+          requestOption:
+            method: GET
+            pageField: page
+            sizeField: size
+            totalField: total
+            itemsField: items
+            labelField: spec.displayName
+            valueField: metadata.name
+            help: 相册照片显示的分组
+        - $formkit: select
+          id: displayMode
+          name: displayMode
+          label: 展示模式
+          value: waterfall
+          options:
+            - label: 瀑布流
+              value: waterfall
+            - label: 轮播
+              value: carousel
+            - label: 旋转木马
+              value: rotating
+        - $formkit: number
+          id: pageSize
+          name: pageSize
+          label: 每页显示数量
+          value: 20
+
+    # =====================
+    # 歌单配置
+    # =====================
+    - group: aplayer
+      label: 歌单配置
+      formSchema:
+        - $formkit: text
+          id: host
+          name: host
+          label: Meting API 地址
+          value: https://api.injahow.cn/meting/
+          help: 支持 Meting 类型格式的 API，不保证 API 可用度，如无法使用请自行搭建。 https://github.com/injahow/meting-api
+        - $formkit: select
+          id: server
+          name: server
+          label: 音乐服务商
+          help: 不同接口所支持的音乐服务商不同，如无法使用请自行更换
+          value: netease
+          options:
+            - value: netease
+              label: 网易云音乐
+            - value: tencent
+              label: QQ 音乐
+            - value: xiami
+              label: 虾米音乐
+            - value: kugou
+              label: 酷狗音乐
+            - value: baidu
+              label: 百度音乐
+        - $formkit: select
+          id: type
+          name: type
+          label: 类别
+          value: playlist
+          options:
+            - value: song
+              label: 单曲
+            - value: playlist
+              label: 歌单
+            - value: album
+              label: 专辑
+            - value: artist
+              label: 歌手
+            - value: search
+              label: 搜索
+        - $formkit: text
+          id: id
+          name: id
+          label: id
+          value: 14425394622
+        - $formkit: select
+          id: preload
+          name: preload
+          label: 预加载
+          value: none
+          options:
+            - value: none
+              label: 无
+            - value: metadata
+              label: 仅元数据
+            - value: auto
+              label: 自动
+        - $formkit: number
+          id: volume
+          name: volume
+          label: 默认音量大小
+          value: 0.7
+        - $formkit: checkbox
+          name: autoplay
+          label: 自动播放
+          value: false
+          help: 由于浏览器限制，此功能可能无法生效！（也建议不要开启，会产生噪音，影响用户体验）
+        - $formkit: select
+          id: order
+          name: order
+          label: 播放顺序
+          value: random
+          options:
+            - value: list
+              label: 列表
+            - value: random
+              label: 随机
+        - $formkit: color
+          id: theme
+          name: theme
+          label: 主题色
+          value: "#FFA500"
+
+    # =====================
+    # 主题配置
+    # =====================
+    - group: theme
+      label: 主题配置
+      formSchema:
+        - $formkit: group
+          id: colors
+          name: colors
+          label: 主题颜色
+          children:
+            - $formkit: color
+              id: primary
+              name: primary
+              label: 主色调
+              value: "#FF6FA2"
+            - $formkit: color
+              id: secondary
+              name: secondary
+              label: 次色调
+              value: "#FFD4E5"
+        - $formkit: group
+          id: fonts
+          name: fonts
+          label: 字体设置
+          children:
+            - $formkit: text
+              id: main
+              name: main
+              label: 主字体
+              value: serif
+        - $formkit: textarea
+          id: customCss
+          name: customCss
+          label: 自定义 CSS
+          value: ""
