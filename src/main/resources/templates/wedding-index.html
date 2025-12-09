@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>婚礼邀请 | Wedding Invitation</title>
+    <script src="https://cdn.staticfile.org/vue/3.3.4/vue.global.prod.min.js"></script>
+    <script src="https://cdn.staticfile.org/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.staticfile.org/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #b72b2b; /* 故宫红 */
+            --gold: #c5a059;    /* 鎏金色 */
+            --bg-paper: #fdfcf8; /* 宣纸白 */
+            --text-main: #2b2b2b;
+            --text-light: #777;
+
+            --font-title: 'Ma Shan Zheng', cursive;
+            --font-body: 'Noto Serif SC', serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-paper);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+        }
+
+        /* --- 🌸 飘落花瓣 --- */
+        #petal-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .petal {
+            position: absolute; background: rgba(183, 43, 43, 0.15);
+            border-radius: 150% 0 150% 0;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translate(0, -10px) rotate(0deg); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translate(40px, 100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .container { position: relative; z-index: 10; padding-bottom: 80px; }
+        .fade-up { opacity: 0; transform: translateY(40px); }
+        .section-gap { height: 60px; }
+
+        /* --- 1. 封面 --- */
+        .cover-section {
+            height: 100vh; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+        }
+        .cover-bg-img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.15; filter: grayscale(50%); z-index: -1;
+            mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+        }
+
+        /* 祥云角标 */
+        .cloud-corner {
+            position: absolute; width: 80px; height: 80px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10C30 10 30 30 50 30C70 30 70 10 90 10' stroke='%23c5a059' stroke-width='2'/%3E%3Cpath d='M10 20C40 20 40 50 70 50' stroke='%23c5a059' stroke-width='2'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; opacity: 0.6;
+        }
+        .tl { top: 20px; left: 20px; }
+        .tr { top: 20px; right: 20px; transform: scaleX(-1); }
+        .bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+        .br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+        .xi-logo {
+            font-family: var(--font-title); font-size: 4rem; color: var(--primary);
+            width: 100px; height: 100px; border: 3px double var(--primary);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 0 6px rgba(183, 43, 43, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .main-title {
+            font-family: var(--font-title); font-size: 2.8rem; color: var(--text-main);
+            margin-bottom: 10px; text-shadow: 2px 2px 0 rgba(212, 175, 55, 0.1);
+        }
+        .main-title span { color: var(--primary); margin: 0 10px; font-size: 1.8rem; vertical-align: middle; }
+
+        .invite-label {
+            writing-mode: horizontal-tb;
+            letter-spacing: 8px;
+            font-size: 1.2rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .date-box {
+            border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold);
+            padding: 15px 30px; margin-top: 20px; color: var(--text-main);
+        }
+        .solar-date { font-size: 1.2rem; font-weight: bold; letter-spacing: 1px; }
+        .lunar-date { font-size: 0.95rem; color: var(--text-light); margin-top: 8px; font-family: var(--font-title); }
+
+        .poetic-phrase {
+            margin-top: 40px; font-family: var(--font-title); font-size: 1.2rem;
+            color: var(--text-light); line-height: 1.8; opacity: 0.8;
+        }
+
+        /* --- 2. 自动流式相册 (替代原故事线) --- */
+        .gallery-stream {
+            padding: 40px 20px;
+            position: relative;
+        }
+        /* 贯穿线 */
+        .stream-line {
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 1px;
+            background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+            z-index: -1; opacity: 0.5;
+        }
+
+        .photo-row {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 60px;
+        }
+        /* 偶数行反转 (右图左文) */
+        .photo-row.reverse { flex-direction: row-reverse; }
+
+        .stream-img-box {
+            width: 55%; aspect-ratio: 3/4;
+            padding: 5px; background: #fff; border: 1px solid #eee;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        .stream-img-box img { width: 100%; height: 100%; object-fit: cover; display: block; filter: contrast(105%); }
+
+        /* 图片装饰角 */
+        .corner-deco {
+            position: absolute; width: 15px; height: 15px;
+            border-top: 2px solid var(--gold); border-left: 2px solid var(--gold);
+            top: -5px; left: -5px;
+        }
+        .reverse .corner-deco {
+            border: none; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold);
+            top: auto; left: auto; bottom: -5px; right: -5px;
+        }
+
+        .stream-text-box {
+            width: 40%; text-align: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .stream-title {
+            font-family: var(--font-title); font-size: 1.5rem; color: var(--primary);
+            margin-bottom: 10px; writing-mode: vertical-rl; letter-spacing: 5px;
+        }
+        .stream-desc {
+            font-size: 0.8rem; color: #888; margin-top: 10px; line-height: 1.5;
+            writing-mode: horizontal-tb; /* 如果想竖排也可以改 */
+        }
+
+        /* --- 3. 动态舞台 --- */
+        .stage-wrapper { margin: 60px 0; position: relative; }
+        .stage-header { text-align: center; margin-bottom: 20px; }
+        .stage-header h2 { font-family: var(--font-title); font-size: 2rem; color: var(--primary); }
+        .stage-container { width: 100%; height: 400px; position: relative; perspective: 1000px; overflow: hidden; }
+        .photo-card {
+            position: absolute; width: 55px; height: 55px;
+            border-radius: 2px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: #fff; border: 2px solid #fff;
+        }
+        .photo-card img { width: 100%; height: 100%; object-fit: cover; }
+        .stage-center-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-family: var(--font-title); font-size: 3rem; color: var(--gold);
+            z-index: 5; text-shadow: 0 2px 10px rgba(255,255,255,0.9);
+        }
+
+        /* --- 4. 邀请函 --- */
+        .invite-card {
+            background: #fff; margin: 0 20px 60px; padding: 50px 30px;
+            text-align: center; border: 1px solid #eee;
+            position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.03);
+        }
+        .invite-card::before {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px solid var(--primary); opacity: 0.2; pointer-events: none;
+        }
+        .invite-content p { line-height: 2.4; font-size: 1rem; color: #555; }
+        .highlight { color: var(--primary); font-weight: bold; font-size: 1.1rem;}
+
+        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 40px; }
+        .btn {
+            padding: 12px 30px; border-radius: 50px; font-size: 1rem; cursor: pointer;
+            border: 1px solid var(--primary); transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 4px 15px rgba(183, 43, 43, 0.3); }
+        .btn-outline { background: transparent; color: var(--primary); }
+
+        .loading { position: fixed; inset: 0; background: var(--bg-paper); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--primary); }
+
+        /* --- 弹窗与遮罩 --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000;
+            display: flex; align-items: flex-end;
+        }
+        .modal-sheet {
+            width: 100%; background: #fff; border-radius: 20px 20px 0 0;
+            overflow: hidden; animation: slideUp 0.3s ease-out;
+        }
+        .modal-item {
+            display: block; width: 100%; padding: 18px 0; text-align: center;
+            font-size: 16px; color: #333; text-decoration: none;
+            border-bottom: 1px solid #eee; background: #fff;
+        }
+        .modal-cancel { border-top: 6px solid #f5f5f5; color: #999; }
+        .wx-guide {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 3000;
+            display: flex; justify-content: center; align-items: center;
+            color: white; text-align: center;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="petal-layer"></div>
+
+    <div class="loading" v-if="loading">
+        <div style="font-size: 2rem; font-family: var(--font-title);">良缘</div>
+        <div style="margin-top:10px; font-size: 0.8rem; letter-spacing: 2px;">LOADING...</div>
+    </div>
+
+    <audio ref="bgMusic" loop :src="config?.basic?.backMusic"></audio>
+
+    <div class="container" v-if="!loading">
+
+        <section class="cover-section">
+            <img :src="getPhoto(0)" class="cover-bg-img" alt="bg">
+            <div class="cloud-corner tl"></div><div class="cloud-corner tr"></div>
+            <div class="cloud-corner bl"></div><div class="cloud-corner br"></div>
+
+            <div class="xi-logo fade-up">囍</div>
+            <div class="invite-label fade-up">诚挚邀请</div>
+            <div class="main-title fade-up">
+                {{ config?.basic?.groomName || '新郎' }} <span>&</span> {{ config?.basic?.brideName || '新娘' }}
+            </div>
+
+            <div class="date-box fade-up">
+                <div class="solar-date">{{ formatDate(config?.basic?.weddingDate) }}</div>
+                <div class="lunar-date">
+                    <span>{{ config?.basic?.chineseWeddingDate }}</span>
+                    <span v-if="config?.basic?.chineseWeddingDate" style="margin: 0 4px;">·</span>
+                    <span>{{ getWeekDay(config?.basic?.weddingDate) }}</span>
+                </div>
+            </div>
+
+            <div class="poetic-phrase fade-up">
+                <p>两姓联姻，一堂缔约</p>
+                <p>良缘永结，匹配同称</p>
+            </div>
+        </section>
+
+        <section class="gallery-stream">
+            <div class="stream-line"></div>
+
+            <div v-for="(item, index) in streamList" :key="index"
+                 class="photo-row fade-up"
+                 :class="{ 'reverse': index % 2 !== 0 }">
+
+                <div class="stream-img-box">
+                    <img :src="item.url" loading="lazy">
+                    <div class="corner-deco"></div>
+                </div>
+
+                <div class="stream-text-box">
+                    <div class="stream-title">{{ getQuote(index).title }}</div>
+                    <div class="stream-desc">{{ getQuote(index).desc }}</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stage-wrapper">
+            <div class="stage-header fade-up">
+                <h2>甜蜜瞬间</h2>
+                <div style="font-size:0.8rem; color:#999; margin-top:5px;">( 40+ 心动时刻记录 )</div>
+            </div>
+            <div class="stage-container" @click="handleStageClick">
+                <div class="stage-center-text">{{ currentModeText }}</div>
+                <div v-for="(photo, index) in stagePhotos" :key="index"
+                     class="photo-card"
+                     :ref="el => { if(el) cardRefs[index] = el }">
+                    <img :src="resolveImgUrl(photo)">
+                </div>
+            </div>
+            <div style="text-align: center; font-size: 0.7rem; color: #999; margin-top: 10px;">( 点击照片切换形态 )</div>
+        </section>
+
+        <div class="section-gap"></div>
+
+        <section class="invite-card fade-up">
+            <div style="font-family: var(--font-title); font-size: 2rem; color: var(--primary); margin-bottom: 30px;">
+                诚挚邀请
+            </div>
+            <div class="invite-content">
+                <p>谨定于公历 <span class="highlight">{{ formatDate(config?.basic?.weddingDate) }}</span></p>
+                <p style="font-size:0.95rem; color:#888; font-family: var(--font-title);">
+                    {{ config?.basic?.chineseWeddingDate }} · {{ getWeekDay(config?.basic?.weddingDate) }}
+                </p>
+                <br>
+                <p>恭请 <span class="highlight">您与家人</span></p>
+                <p>光临我们的婚礼仪式</p>
+            </div>
+
+            <div class="location-box" style="margin-top: 40px; padding-top: 30px; border-top: 1px dashed #ddd;">
+                <div style="font-weight: bold; font-size: 1.2rem; color: var(--text-main);">{{ config?.basic?.weddingLocation }}</div>
+                <div style="font-size: 0.9rem; color: #666; margin-top: 8px;">{{ config?.basic?.address }}</div>
+            </div>
+
+            <div class="btn-group">
+                <div class="btn btn-outline" @click="handleCalendarClick">📅 加入日历</div>
+                <div class="btn btn-primary" @click="showMapModal = true">📍 一键导航</div>
+            </div>
+        </section>
+
+        <div style="text-align: center; padding-bottom: 40px; opacity: 0.3; font-size: 0.8rem;">THE WEDDING</div>
+    </div>
+
+    <div class="modal-overlay" v-if="showMapModal" @click="showMapModal = false">
+        <div class="modal-sheet" @click.stop>
+            <div style="padding:15px; text-align:center; font-size:12px; color:#999;">请选择地图APP</div>
+            <a href="javascript:;" @click="openTencentMap" class="modal-item">腾讯地图 (微信推荐)</a>
+            <a href="javascript:;" @click="openBaiduMap" class="modal-item">百度地图</a>
+            <a href="javascript:;" @click="openAmap" class="modal-item">高德地图</a>
+            <div class="modal-item modal-cancel" @click="showMapModal = false">取消</div>
+        </div>
+    </div>
+
+    <div class="wx-guide" v-if="showWxGuide" @click="showWxGuide = false">
+        <div style="width: 80%; background: #fff; padding: 25px; border-radius: 12px; color: #333;">
+            <h3 style="margin-bottom: 10px; color: var(--primary);">温馨提示</h3>
+            <p style="font-size: 14px; color: #666; line-height: 1.6;">微信无法直接下载日历文件。<br>婚礼信息已复制，请切换至日历APP粘贴。</p>
+            <div style="background: #f9f9f9; padding: 10px; margin: 15px 0; border-radius: 6px; font-size: 13px; text-align: left;">
+                {{ config?.basic?.weddingDate }} {{ config?.basic?.groomName }}&{{ config?.basic?.brideName }}婚礼<br>地点：{{ config?.basic?.weddingLocation }}
+            </div>
+            <div class="btn btn-primary" style="padding: 8px 20px; font-size: 14px; width: 100px; margin: 0 auto;">知道了</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, ref, onMounted, nextTick, computed } = Vue;
+
+    createApp({
+        setup() {
+            const config = ref(null);
+            const allPhotos = ref([]);
+            const stagePhotos = ref([]);
+            const cardRefs = ref([]);
+            const loading = ref(true);
+            const bgMusic = ref(null);
+
+            const showMapModal = ref(false);
+            const showWxGuide = ref(false);
+
+            const modes = ['heart', 'ring', 'scatter'];
+            const modeTexts = ['同心', '圆满', '繁星'];
+            const currentModeIndex = ref(0);
+            const currentModeText = ref('');
+            let autoPlayTimer = null;
+
+            // --- 预设唯美文案库 (循环使用) ---
+            const quotes = [
+                { title: '金风玉露', desc: '于千万人之中，遇见你要遇见的人。' },
+                { title: '执子之手', desc: '死生契阔，与子成说。' },
+                { title: '喜结连理', desc: '良缘永结，匹配同称。' },
+                { title: '白首之约', desc: '愿得一心人，白首不相离。' },
+                { title: '琴瑟在御', desc: '岁月静好，与君语；细水流年，与君同。' }
+            ];
+
+            // 计算属性：从相册中取前 5 张用于“时间轴展示”
+            const streamList = computed(() => {
+                if (allPhotos.value.length === 0) return [];
+                // 取前5张，如果没有那么多，就循环取
+                const list = [];
+                for(let i=0; i<5; i++) {
+                    // 确保有图，哪怕相册只有1张也能循环
+                    if (allPhotos.value.length > 0) {
+                        list.push({ url: resolveImgUrl(allPhotos.value[i % allPhotos.value.length]) });
+                    }
+                }
+                return list;
+            });
+
+            const getQuote = (index) => {
+                return quotes[index % quotes.length];
+            };
+
+            const resolveImgUrl = (url) => {
+                if (!url) return '';
+                if (url.startsWith('http')) return url;
+                return url.startsWith('/') ? url : '/' + url;
+            };
+
+            const formatDate = (str) => {
+                if(!str) return '';
+                const d = new Date(str.replace('T', ' ').replace(/-/g, '/'));
+                return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+            };
+
+            const getWeekDay = (str) => {
+                if(!str) return '';
+                const d = new Date(str.replace('T', ' ').replace(/-/g, '/'));
+                const cnWeek = ['日','一','二','三','四','五','六'];
+                return `星期${cnWeek[d.getDay()]}`;
+            };
+
+            const getPhoto = (index) => {
+                if (allPhotos.value.length > index) return resolveImgUrl(allPhotos.value[index]);
+                return 'https://images.unsplash.com/photo-1519741497674-611481863552?w=500';
+            };
+
+            const initScrollAnimations = () => {
+                gsap.registerPlugin(ScrollTrigger);
+                gsap.utils.toArray('.fade-up').forEach(el => {
+                    gsap.to(el, {
+                        opacity: 1, y: 0, duration: 1, ease: 'power2.out',
+                        scrollTrigger: { trigger: el, start: "top 85%" }
+                    });
+                });
+            };
+
+            const startStageShow = () => {
+                switchScene(modes[0]);
+                autoPlayTimer = setInterval(() => {
+                    currentModeIndex.value = (currentModeIndex.value + 1) % modes.length;
+                    switchScene(modes[currentModeIndex.value]);
+                }, 5000);
+            };
+
+            const switchScene = (mode) => {
+                const stageWidth = window.innerWidth;
+                const cx = stageWidth / 2;
+                const cy = 200;
+                currentModeText.value = modeTexts[currentModeIndex.value];
+                gsap.fromTo(".stage-center-text", {opacity:0, scale:0.5}, {opacity:1, scale:1, duration:1, yoyo:true, repeat:1, repeatDelay:1.5});
+
+                cardRefs.value.forEach((el, i) => {
+                    if(!el) return;
+                    let t = { x: 0, y: 0, scale: 1, rotation: 0, zIndex: 1, opacity: 1 };
+
+                    if (mode === 'heart') {
+                        if (i < 20) {
+                            const rad = (i / 20) * Math.PI * 2;
+                            const hx = 16 * Math.pow(Math.sin(rad), 3);
+                            const hy = -(13 * Math.cos(rad) - 5 * Math.cos(2*rad) - 2 * Math.cos(3*rad) - Math.cos(4*rad));
+                            t.x = cx + hx * 9 - 27; t.y = cy + hy * 9 - 27;
+                        } else {
+                            t.x = Math.random() * stageWidth; t.y = Math.random() * 400; t.scale = 0.5; t.opacity = 0.1;
+                        }
+                    } else if (mode === 'ring') {
+                        const r = 130;
+                        const ang = (i / 28) * Math.PI * 2;
+                        t.x = cx + Math.cos(ang) * r - 27; t.y = cy + Math.sin(ang) * r - 27; t.scale = 0.8;
+                    } else {
+                        t.x = Math.random() * (stageWidth - 60); t.y = Math.random() * 350 + 20;
+                        t.rotation = Math.random() * 60 - 30; t.scale = 0.6 + Math.random() * 0.6; t.zIndex = Math.floor(t.scale * 10);
+                    }
+                    gsap.to(el, {
+                        left: t.x, top: t.y, rotation: t.rotation, scale: t.scale, opacity: t.opacity, zIndex: t.zIndex,
+                        duration: 1.5, ease: "power3.inOut", delay: i * 0.01
+                    });
+                });
+            };
+
+            const handleStageClick = () => {
+                if (autoPlayTimer) clearInterval(autoPlayTimer);
+                currentModeIndex.value = (currentModeIndex.value + 1) % modes.length;
+                switchScene(modes[currentModeIndex.value]);
+                setTimeout(() => {
+                    if (autoPlayTimer) clearInterval(autoPlayTimer);
+                    autoPlayTimer = setInterval(() => {
+                        currentModeIndex.value = (currentModeIndex.value + 1) % modes.length;
+                        switchScene(modes[currentModeIndex.value]);
+                    }, 5000);
+                }, 3000);
+            };
+
+            const playMusicOnce = () => { if(bgMusic.value) bgMusic.value.play().catch(()=>{}); };
+
+            const handleCalendarClick = () => {
+                const ua = navigator.userAgent.toLowerCase();
+                const isWeChat = ua.match(/MicroMessenger/i) == "micromessenger";
+                const info = `【婚礼】${config.value?.basic?.groomName}&${config.value?.basic?.brideName}\n时间: ${config.value?.basic?.weddingDate}\n地点: ${config.value?.basic?.weddingLocation}`;
+                if (isWeChat) {
+                    navigator.clipboard.writeText(info).then(() => showWxGuide.value = true).catch(() => showWxGuide.value = true);
+                } else {
+                    const event = { title: `婚礼: ${config.value?.basic?.groomName}`, location: config.value?.basic?.weddingLocation, start: config.value?.basic?.weddingDate };
+                    const dateStr = event.start ? event.start.replace(/[-: ]/g, '').replace('T', '') : '20251020';
+                    const icsContent = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT', `SUMMARY:${event.title}`, `LOCATION:${event.location}`, `DTSTART:${dateStr}`, `DTEND:${dateStr}`, 'END:VEVENT', 'END:VCALENDAR'].join('\n');
+                    const link = document.createElement('a'); link.href = window.URL.createObjectURL(new Blob([icsContent], {type:'text/calendar'}));
+                    link.setAttribute('download', 'wedding.ics'); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                }
+            };
+
+            const getCoords = () => {
+                const mapLoc = config.value?.basic?.mapLocation || "116.397470,39.908823";
+                const [lng, lat] = mapLoc.split(',').map(Number);
+                const name = config.value?.basic?.weddingLocation || "婚礼现场";
+                const addr = config.value?.basic?.address || "";
+                return { lng, lat, name, addr };
+            };
+
+            const openTencentMap = () => {
+                const { lat, lng, name, addr } = getCoords();
+                window.location.href = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${lat},${lng};title:${encodeURIComponent(name)};addr:${encodeURIComponent(addr)}&referer=weddingInvite`;
+            };
+            const openAmap = () => {
+                const { lat, lng, name } = getCoords();
+                window.location.href = `https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(name)}&callnative=1`;
+            };
+            const openBaiduMap = () => {
+                const { lat, lng, name, addr } = getCoords();
+                const x_pi = 3.14159265358979324 * 3000.0 / 180.0;
+                const z = Math.sqrt(lng * lng + lat * lat) + 0.00002 * Math.sin(lat * x_pi);
+                const theta = Math.atan2(lat, lng) + 0.000003 * Math.cos(lng * x_pi);
+                const bd_lng = z * Math.cos(theta) + 0.0065;
+                const bd_lat = z * Math.sin(theta) + 0.006;
+                window.location.href = `http://api.map.baidu.com/marker?location=${bd_lat},${bd_lng}&title=${encodeURIComponent(name)}&content=${encodeURIComponent(addr)}&output=html&src=weddingInvite`;
+            };
+
+            const initPetals = () => {
+                const container = document.getElementById('petal-layer');
+                for(let i=0; i<15; i++) {
+                    const petal = document.createElement('div');
+                    petal.className = 'petal';
+                    const size = Math.random() * 8 + 5 + 'px';
+                    petal.style.width = size; petal.style.height = size;
+                    petal.style.left = Math.random() * 100 + 'vw';
+                    petal.style.animationDuration = Math.random() * 5 + 6 + 's';
+                    petal.style.animationDelay = Math.random() * 5 + 's';
+                    container.appendChild(petal);
+                }
+            };
+
+            const init = async () => {
+                try {
+                    const cfgRes = await fetch('/apis/api.wedding.aiym.fun/v1alpha1/config');
+                    config.value = await cfgRes.json();
+                    if (config.value.theme?.colors) {
+                        const root = document.documentElement;
+                        if(config.value.theme.colors.primary) root.style.setProperty('--primary', config.value.theme.colors.primary);
+                        if(config.value.theme.colors.secondary) root.style.setProperty('--gold', config.value.theme.colors.secondary);
+                    }
+                    if (config.value.album?.galleryName) {
+                        await fetchPhotos(config.value.album.galleryName, 40);
+                    } else {
+                        loadDemoData();
+                    }
+                } catch (e) {
+                    loadDemoData();
+                } finally {
+                    let list = [...allPhotos.value];
+                    if(list.length < 30) list = [...list, ...list, ...list].slice(0,40);
+                    stagePhotos.value = list;
+                    loading.value = false;
+                    nextTick(() => {
+                        initPetals(); initScrollAnimations(); startStageShow();
+                        document.addEventListener('click', playMusicOnce, {once:true});
+                        document.addEventListener('touchstart', playMusicOnce, {once:true});
+                    });
+                }
+            };
+
+            const fetchPhotos = async (groups, size) => {
+                const promises = groups.map(g =>
+                        fetch(`/apis/console.api.photo.halo.run/v1alpha1/photos?page=1&size=${size}&fieldSelector=spec.groupName=${encodeURIComponent(g)}`)
+                                .then(res => res.ok ? res.json() : {items:[]}).catch(()=>({items:[]}))
+                );
+                const res = await Promise.all(promises);
+                let urls = [];
+                res.forEach(d => { if(d.items) urls.push(...d.items.map(i => i.spec?.url).filter(u=>u)); });
+                allPhotos.value = [...new Set(urls)];
+            };
+
+            const loadDemoData = () => {
+                const demo = [
+                    'https://images.unsplash.com/photo-1519741497674-611481863552?w=500',
+                    'https://images.unsplash.com/photo-1511285560982-1351cdeb9821?w=500',
+                    'https://images.unsplash.com/photo-1522673607200-1645062cd958?w=500',
+                    'https://images.unsplash.com/photo-1519225421980-715cb0202128?w=500'
+                ];
+                allPhotos.value = [...demo, ...demo, ...demo, ...demo, ...demo];
+            };
+
+            onMounted(() => init());
+
+            return {
+                loading, config, stagePhotos, streamList, cardRefs, bgMusic, currentModeText,
+                showMapModal, showWxGuide,
+                handleStageClick, handleCalendarClick,
+                openTencentMap, openBaiduMap, openAmap,
+                formatDate, getWeekDay, getPhoto, resolveImgUrl, getQuote
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

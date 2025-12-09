@@ -72,14 +72,19 @@ public interface SettingConfigGetter {
         private String weddingDate;
 
         /**
+         * 婚期（农历）
+         */
+        private String chineseWeddingDate;
+
+        /**
          * 婚礼地点
          */
         private String weddingLocation;
 
         /**
-         * 分享图 URL
+         * 背景音乐URL
          */
-        private String shareImage;
+        private String backMusic;
 
 
         /**

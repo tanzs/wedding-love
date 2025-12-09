@@ -1,11 +1,8 @@
-package com.aiym.weddinglove.service.impl;
+package com.aiym.weddinglove;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +27,7 @@ import run.halo.app.plugin.PluginContext;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ConfigEndpoint implements CustomEndpoint {
+public class WeddingEndpoint implements CustomEndpoint {
 
     private final ReactiveExtensionClient client;
 

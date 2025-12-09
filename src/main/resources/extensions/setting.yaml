@@ -27,20 +27,35 @@ spec:
         - $formkit: datetime-local
           id: weddingDate
           name: weddingDate
-          label: 婚期
+          label: 婚期（阳历）
           value: "2026-10-01 12:00"
+          validation: required
+        - $formkit: text
+          id: chineseWeddingDate
+          name: chineseWeddingDate
+          label: 婚期（农历）
+          value: "农历二〇二六年 十月初一"
+          validation: required
+        - $formkit: text
+          id: cityName
+          name: cityName
+          label: 城市名称
+          placeholder: 请输入城市名称
+          value: 上海
+          validation: required
         - $formkit: text
           id: weddingLocation
           name: weddingLocation
           label: 婚礼地点
           placeholder: 请输入婚礼地点
           value: 上海·外滩茂悦酒店
+          validation: required
         - $formkit: attachment
-          id: shareImage
-          name: shareImage
-          label: 分享图
-          value: ""
-          placeholder: 请输入分享图URL或者选择附近中图片
+          id: backMusic
+          name: backMusic
+          label: 背景音乐
+          value: "https://img.aiym.fun:8888/halo/M500002z7S8T0JoS9W.mp3"
+          placeholder: 请输入背景音乐URL或者选择附近中音乐
         - $formkit: text
           id: mapLocation
           name: mapLocation
@@ -57,14 +72,7 @@ spec:
               label: 开启
             - value: false
               label: 关闭
-        - $formkit: text
-          if: $get(enableWeather).value === true
-          id: cityName
-          name: cityName
-          label: 城市名称
-          placeholder: 用于天气查询
-          value: 上海
-          validation: required
+          help: 启用天气显示功能，会在页面顶部显示实时天气信息，天气城市为设置的城市天气。
 
     # =====================
     # 流程节点配置
@@ -80,7 +88,6 @@ spec:
           max: 10
           label: 流程列表
           value:
-            # 修正：将所有时间值用引号包裹，确保它们是字符串
             - title: "接亲出发"
               description: "前往新娘家接亲"
               type: "timepoint"
@@ -141,24 +148,24 @@ spec:
             itemsField: items
             labelField: spec.displayName
             valueField: metadata.name
-            help: 相册照片显示的分组
+          help: 建议上传婚纱照到图库（相册基于图库插件实现，需要先安装图库管理插件并配置图库相册信息，插件地址：https://www.halo.run/store/apps/app-BmQJW）
         - $formkit: select
           id: displayMode
           name: displayMode
           label: 展示模式
-          value: waterfall
+          value: heart
           options:
-            - label: 瀑布流
-              value: waterfall
-            - label: 轮播
-              value: carousel
-            - label: 旋转木马
-              value: rotating
+            - label: 爱心模式
+              value: heart
+            - label: 胶卷模式
+              value: film
+            - label: 杂志模式
+              value: magazine
         - $formkit: number
           id: pageSize
           name: pageSize
           label: 每页显示数量
-          value: 20
+          value: 10
 
     # =====================
     # 歌单配置
@@ -263,12 +270,14 @@ spec:
               id: primary
               name: primary
               label: 主色调
-              value: "#FF6FA2"
+              value: "#d43f3a"
+              help: "主色：按钮、高亮、图标"
             - $formkit: color
               id: secondary
               name: secondary
               label: 次色调
-              value: "#FFD4E5"
+              value: "#ff9a9e"
+              help: "渐变尾部、柔和背景"
         - $formkit: group
           id: fonts
           name: fonts
