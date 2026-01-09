@@ -14,7 +14,6 @@
             --bg-gradient: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
         }
 
-        /* 解决底部颜色断层：背景固定不随内容滚动 */
         html, body {
             background: var(--bg-gradient) fixed;
             background-size: cover; margin: 0; padding: 0;
@@ -24,7 +23,6 @@
         [v-cloak] { display: none !important; }
         * { box-sizing: border-box; }
 
-        /* 通用玻璃卡片样式 */
         .glass-card {
             background: rgba(255, 255, 255, 0.78);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -33,7 +31,6 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
         }
 
-        /* 音乐悬浮按钮 */
         .music-btn {
             position: fixed; top: 20px; right: 20px; z-index: 2000;
             width: 40px; height: 40px; border-radius: 50%;
@@ -44,7 +41,6 @@
         .rotating { animation: rotate 4s linear infinite; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        /* 开场引导层：绝对居中 */
         #quantum-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1000; background: var(--bg-gradient);
@@ -62,11 +58,10 @@
         .timeline-node { transition: all 0.5s ease; border-left: 2px dashed #ddd; position: relative; padding-left: 25px; padding-bottom: 25px; margin-left: 10px; }
         .dot { width: 12px; height: 12px; background: #fff; border: 2.5px solid var(--primary); border-radius: 50%; position: absolute; left: -7px; top: 6px; z-index: 2; }
 
-        /* 状态颜色区分 */
-        .status-done { opacity: 0.5; filter: grayscale(0.8); } /* 已完成：灰度 */
+        .status-done { opacity: 0.5; filter: grayscale(0.8); }
         .status-done .dot { background: #ccc !important; border-color: #eee !important; }
 
-        .status-live { /* 进行中：红底高亮 */
+        .status-live {
             background: rgba(212, 63, 58, 0.08);
             border-left: 3px solid var(--primary) !important;
             border-radius: 0 15px 15px 0;
@@ -81,7 +76,6 @@
         .live-tag { background: var(--primary); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; animation: blink 1s infinite alternate; }
         @keyframes blink { from { opacity: 1; } to { opacity: 0.4; } }
 
-        /* 内容显示优化 */
         .reminder-text { white-space: pre-wrap; font-size: 0.9rem; color: #666; line-height: 1.6; }
         .poster-frame { border: 6px solid #fff; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .poster-img { width: 100%; display: block; object-fit: cover; }
@@ -91,6 +85,10 @@
 
         .action-sheet-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: flex; align-items: flex-end; }
         .action-sheet { width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+
+        /* 时间标签样式 */
+        .time-label { color: var(--primary); font-weight: bold; font-size: 0.9rem; margin-bottom: 2px; }
+        .time-range-sep { margin: 0 4px; opacity: 0.6; }
     </style>
 </head>
 <body>
@@ -112,7 +110,7 @@
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--primary); background: #fff; padding: 0 8px; font-size: 12px;">❤</div>
             </div>
             <div style="font-size: 1.2rem; color: #555; letter-spacing: 2px; margin-bottom: 35px; font-weight: 500;">{{ formatDate(config.basic.weddingDate) }}</div>
-            <div style="padding: 12px 40px; border-radius: 30px; background: var(--primary); color: #fff; font-weight: bold; box-shadow: 0 5px 20px rgba(212,63,58,0.3);">见证幸福时刻</div>
+            <div style="padding: 12px 40px; border-radius: 30px; background: var(--primary); color: #fff; font-weight: bold; box-shadow: 0 5px 20px rgba(212,63,58,0.3);">开启幸福时刻</div>
         </div>
     </div>
 
@@ -159,7 +157,13 @@
                  :class="['timeline-node', getNodeStatusClass(node, i)]">
                 <div class="dot"></div>
                 <div>
-                    <div style="color: var(--primary); font-weight: bold; font-size: 0.85rem;">{{ node.startTime }}</div>
+                    <div class="time-label">
+                        <span>{{ node.startTime }}</span>
+                        <template v-if="node.endTime">
+                            <span class="time-range-sep">-</span>
+                            <span>{{ node.endTime }}</span>
+                        </template>
+                    </div>
                     <div style="font-weight: bold; margin: 3px 0; font-size: 1.05rem; display: flex; align-items: center;">
                         {{ node.title }}
                         <span v-if="getNodeStatusClass(node, i) === 'status-live'" class="live-tag">LIVE</span>
@@ -215,15 +219,11 @@
                 else { bgMusic.value.pause(); isPlaying.value = false; }
             };
 
-            // 🌟 修复后的地图跳转逻辑
             const openMap = (type) => {
                 const b = config.value?.basic || {};
-
-                // 默认坐标（和平饭店）：121.488585, 31.240801
                 let lng = "121.488585";
                 let lat = "31.240801";
 
-                // 如果接口有数据，优先读取接口坐标
                 if (b.mapLocation && b.mapLocation.includes(',')) {
                     const parts = b.mapLocation.split(',');
                     lng = parts[0].trim();
@@ -233,29 +233,37 @@
                 const name = encodeURIComponent(b.weddingLocation || "婚礼地点");
 
                 if (type === 'qq') {
-                    // 腾讯地图接口：坐标顺序必须是 lat,lng
                     window.location.href = `https://apis.map.qq.com/uri/v1/geocoder?coord=${lat},${lng}&name=${name}`;
                 } else if (type === 'amap') {
-                    // 高德地图接口：坐标顺序必须是 lng,lat
                     window.location.href = `https://uri.amap.com/marker?position=${lng},${lat}&name=${name}`;
                 }
                 showMapSelector.value = false;
             };
 
-            // 🌟 行程状态判断逻辑
+            // 🌟 核心逻辑优化：同时支持时间点和时间段
             const getNodeStatusClass = (node, index) => {
                 if (!config.value?.basic || !node.startTime) return '';
                 const today = config.value.basic.weddingDate.split('T')[0];
-                const nodeTime = new Date(`${today} ${node.startTime}`.replace(/-/g, "/"));
                 const now = new Date();
 
-                const nextNode = config.value.timeline.timelineNodes[index + 1];
-                let nextTime = nextNode
-                        ? new Date(`${today} ${nextNode.startTime}`.replace(/-/g, "/"))
-                        : new Date(nodeTime.getTime() + 3 * 60 * 60 * 1000); // 最后一个环节假定3小时
+                // 环节开始时间
+                const nodeStartTime = new Date(`${today} ${node.startTime}`.replace(/-/g, "/"));
 
-                if (now > nextTime) return 'status-done';
-                if (now >= nodeTime && now <= nextTime) return 'status-live';
+                // 环节结束时间逻辑：优先取 endTime，没有则取下一节点开始时间，最后兜底3小时
+                let nodeEndTime;
+                if (node.endTime) {
+                    nodeEndTime = new Date(`${today} ${node.endTime}`.replace(/-/g, "/"));
+                } else {
+                    const nextNode = config.value.timeline.timelineNodes[index + 1];
+                    if (nextNode) {
+                        nodeEndTime = new Date(`${today} ${nextNode.startTime}`.replace(/-/g, "/"));
+                    } else {
+                        nodeEndTime = new Date(nodeStartTime.getTime() + 3 * 60 * 60 * 1000);
+                    }
+                }
+
+                if (now > nodeEndTime) return 'status-done';
+                if (now >= nodeStartTime && now <= nodeEndTime) return 'status-live';
                 return '';
             };
 
@@ -266,7 +274,6 @@
                     config.value = data;
 
                     if (data.basic) {
-                        // 动态修改标题
                         document.title = `${data.basic.groomName} ❤️ ${data.basic.brideName}`;
 
                         const target = new Date(data.basic.weddingDate.replace(/-/g, '/').replace('T', ' ')).getTime();
@@ -274,7 +281,6 @@
                             const now = Date.now();
                             const dist = target - now;
 
-                            // 判断是否为婚礼当天 (前后24小时窗口)
                             if (dist <= 43200000 && dist > -86400000) {
                                 isWeddingDay.value = true;
                                 countdown.show = false;
@@ -314,7 +320,6 @@
                 gsap.to('#quantum-layer', { opacity: 0, duration: 0.8, onComplete: () => {
                         showIntro.value = false;
                         document.body.style.overflow = 'auto';
-                        // 进入后自动寻找 LIVE 环节并滚动
                         nextTick(() => {
                             setTimeout(() => {
                                 const live = document.querySelector('.status-live');
