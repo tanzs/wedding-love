@@ -15,7 +15,7 @@ spec:
   homepage: https://github.com/Tanzs/wedding-love#readme
   repo: https://github.com/Tanzs/wedding-love
   issues: https://github.com/Tanzs/wedding-love/issues
-  version: 1.0.1
+  version: 1.0.0
   displayName: "Love时刻"
   description: "为新人打造专属的婚礼互动插件"
   configMapName: wedding-setting-configmap
