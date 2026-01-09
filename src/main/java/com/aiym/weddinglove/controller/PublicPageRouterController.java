@@ -30,21 +30,10 @@ public class PublicPageRouterController {
         // 将多个路由规则组合在一起
         return route()
             .GET(PAGE_BASE_PATH + "/index", this::renderIndex)
-            .GET(PAGE_BASE_PATH + "/wedding", this::renderWedding)
             .build();
     }
 
     Mono<ServerResponse> renderIndex(ServerRequest request) {
-        // 可以在这里准备需要传递给模板的数据
-        Map<String, Object> model = new HashMap<>();
-        model.put("message", "wedding-index");
-
-        // 解析模板，如果主题没有提供，则使用插件自带的默认模板
-        return templateNameResolver.resolveTemplateNameOrDefault(request.exchange(), "wedding-index")
-            .flatMap(templateName -> ServerResponse.ok().render(templateName, model));
-    }
-
-    Mono<ServerResponse> renderWedding(ServerRequest request) {
         // 可以在这里准备需要传递给模板的数据
         Map<String, Object> model = new HashMap<>();
         model.put("message", "wedding");

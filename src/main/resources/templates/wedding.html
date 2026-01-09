@@ -2,222 +2,193 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Wedding...</title>
     <script src="https://cdn.staticfile.org/vue/3.3.4/vue.global.prod.min.js"></script>
     <script src="https://cdn.staticfile.org/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-        /* --- 🎨 动态主题根变量 (默认值) --- */
         :root {
-            /* 默认中国红配色，接口数据会覆盖这里 */
-            --primary: #d43f3a;      /* 主色：按钮、高亮、图标 */
-            --secondary: #ff9a9e;    /* 次色：渐变尾部、柔和背景 */
-            --font-main: -apple-system, "PingFang SC", serif; /* 默认字体 */
-            --bg-gradient: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); /* 背景基调 */
+            --primary: #d43f3a;
+            --secondary: #ff9a9e;
+            --bg-gradient: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%);
         }
 
-        /* --- 全局样式 --- */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html {
-            width: 100%; height: 100%;
-            /* 背景使用 CSS 变量，也可以被 CustomCSS 覆盖 */
-            background: var(--bg-gradient);
-            color: #4a4a4a;
-            font-family: var(--font-main);
-            overflow: hidden; -webkit-tap-highlight-color: transparent;
-            transition: background 0.5s ease; /* 换肤过渡 */
+        /* 解决底部颜色断层：背景固定不随内容滚动 */
+        html, body {
+            background: var(--bg-gradient) fixed;
+            background-size: cover; margin: 0; padding: 0;
+            width: 100%; height: 100%; -webkit-font-smoothing: antialiased;
         }
 
-        /* Loading */
-        .loading-mask {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-gradient); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .spinner {
-            width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.6);
-            border-radius: 50%;
-            border-top-color: var(--primary); /* 动态主色 */
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        [v-cloak] { display: none !important; }
+        * { box-sizing: border-box; }
 
-        /* 开场层 */
+        /* 通用玻璃卡片样式 */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 24px;
+            padding: 25px 20px; margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 音乐悬浮按钮 */
+        .music-btn {
+            position: fixed; top: 20px; right: 20px; z-index: 2000;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.8); display: flex;
+            align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #fff;
+        }
+        .rotating { animation: rotate 4s linear infinite; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* 开场引导层：绝对居中 */
         #quantum-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1000; background: var(--bg-gradient);
             display: flex; justify-content: center; align-items: center;
         }
-        canvas { position: absolute; top: 0; left: 0; mix-blend-mode: screen; }
-        .enter-tip { z-index: 10; text-align: center; pointer-events: none; }
-        .pulse-text {
-            font-size: 1.6rem; letter-spacing: 4px; font-weight: bold;
-            /* 动态渐变字 */
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; color: transparent;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%,100%{opacity:0.8; transform: scale(1);} 50%{opacity:1; transform: scale(1.05);} }
-
-        /* 主内容 */
-        #main-content {
-            min-height: 100vh; padding: 20px 20px 80px; overflow-y: auto;
-            animation: fadeIn 0.8s ease-out;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
-        .glass-card {
-            background: rgba(255,255,255,0.45); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.6); border-radius: 24px;
-            padding: 25px 20px; margin-bottom: 25px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); /* 阴影改淡点，适配各种颜色 */
+        canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+        .enter-card {
+            z-index: 10; width: 85%; max-width: 380px; text-align: center;
+            padding: 40px 25px; background: rgba(255, 255, 255, 0.3);
+            border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.4);
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        .hero-names h1 {
-            font-size: 2.2rem; font-weight: 800; text-align: center; margin-bottom: 10px;
-            /* 动态渐变字 */
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; color: transparent;
+        /* 行程节点样式 */
+        .timeline-node { transition: all 0.5s ease; border-left: 2px dashed #ddd; position: relative; padding-left: 25px; padding-bottom: 25px; margin-left: 10px; }
+        .dot { width: 12px; height: 12px; background: #fff; border: 2.5px solid var(--primary); border-radius: 50%; position: absolute; left: -7px; top: 6px; z-index: 2; }
+
+        /* 状态颜色区分 */
+        .status-done { opacity: 0.5; filter: grayscale(0.8); } /* 已完成：灰度 */
+        .status-done .dot { background: #ccc !important; border-color: #eee !important; }
+
+        .status-live { /* 进行中：红底高亮 */
+            background: rgba(212, 63, 58, 0.08);
+            border-left: 3px solid var(--primary) !important;
+            border-radius: 0 15px 15px 0;
+            padding-top: 10px; padding-bottom: 10px;
         }
-        .hero-info { text-align: center; color: #7f8c8d; font-size: 0.95rem; line-height: 1.5; }
-
-        /* 倒计时 */
-        .countdown-box { display: flex; justify-content: space-around; text-align: center; flex-wrap: nowrap; }
-        .count-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
-        .count-num {
-            font-size: 1.6rem; font-weight: bold;
-            color: var(--primary); /* 动态主色 */
-            background: rgba(255,255,255,0.6);
-            min-width: 46px; padding: 0 8px; height: 50px;
-            line-height: 50px; border-radius: 12px; margin-bottom: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-family: monospace;
+        .status-live .dot {
+            background: var(--primary) !important; border-color: #fff !important;
+            box-shadow: 0 0 10px var(--primary); animation: pulse-dot 1.5s infinite;
         }
-        .count-label { font-size: 0.8rem; color: #888; }
+        @keyframes pulse-dot { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
 
-        /* 流程 */
-        .section-title {
-            color: var(--primary); /* 动态主色 */
-            margin-bottom: 20px; font-size: 1.2rem; font-weight: bold;
-            display: flex; align-items: center;
-        }
-        .section-title::before { content: '♥'; margin-right: 8px; color: var(--secondary); }
+        .live-tag { background: var(--primary); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; animation: blink 1s infinite alternate; }
+        @keyframes blink { from { opacity: 1; } to { opacity: 0.4; } }
 
-        .timeline-box { position: relative; padding-left: 10px; }
-        .timeline-item {
-            display: flex; padding-bottom: 30px;
-            border-left: 2px dashed rgba(0,0,0,0.1); /* 边框改淡 */
-            margin-left: 8px; padding-left: 25px; position: relative;
-        }
-        .timeline-item:last-child { border-left: 2px solid transparent; }
+        /* 内容显示优化 */
+        .reminder-text { white-space: pre-wrap; font-size: 0.9rem; color: #666; line-height: 1.6; }
+        .poster-frame { border: 6px solid #fff; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .poster-img { width: 100%; display: block; object-fit: cover; }
 
-        .time-dot {
-            width: 16px; height: 16px; border-radius: 50%;
-            position: absolute; left: -9px; top: 4px;
-            background: #fff; border: 3px solid #ccc; z-index: 2; transition: all 0.3s;
-        }
+        #main-content { min-height: 100vh; padding: 20px 15px 100px; overflow-y: auto; }
+        .nav-btn { background: linear-gradient(90deg, var(--primary), var(--secondary)); color: #fff; padding: 12px 30px; border-radius: 30px; font-weight: bold; border: none; font-size: 1rem; box-shadow: 0 5px 20px rgba(212, 63, 58, 0.2); }
 
-        /* 状态样式 */
-        .status-done .time-dot { background: #ccc; border-color: #ccc; display: flex; align-items: center; justify-content: center; }
-        .status-done .time-dot::after { content: '✔'; font-size: 10px; color: #fff; }
-        .status-done .time-content { opacity: 0.6; filter: grayscale(0.8); }
-
-        .status-active .time-dot {
-            background: var(--primary); border-color: #fff;
-            box-shadow: 0 0 0 3px rgba(255,255,255, 0.5); /* 简化阴影 */
-            animation: pulse-dot 1.5s infinite;
-        }
-        @keyframes pulse-dot { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
-        .status-active .time-title { color: var(--primary) !important; font-size: 1.15rem; }
-        .live-tag {
-            display: inline-block; background: var(--primary); color: #fff;
-            font-size: 0.7rem; padding: 1px 6px; border-radius: 4px;
-            margin-left: 8px; vertical-align: middle;
-            animation: blink 1s infinite alternate;
-        }
-        @keyframes blink { from { opacity: 1; } to { opacity: 0.6; } }
-        .status-todo .time-dot { border-color: var(--secondary); background: #fff; }
-
-        .time-start { color: var(--primary); font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
-        .time-title { font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 4px; }
-        .time-desc { font-size: 0.85rem; color: #7f8c8d; }
-
-        /* 导航按钮 */
-        .nav-btn {
-            margin-top: 15px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            color: #fff; display: inline-block; padding: 10px 28px; border-radius: 30px;
-            font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-weight: bold;
-        }
+        .action-sheet-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: flex; align-items: flex-end; }
+        .action-sheet { width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
     </style>
 </head>
 <body>
 
-<div id="app">
+<div id="app" v-cloak>
+    <div class="music-btn" v-if="!showIntro" @click="toggleMusic" :class="{ rotating: isPlaying }">
+        <span style="font-size: 20px;">{{ isPlaying ? '🎵' : '🔇' }}</span>
+    </div>
     <audio ref="bgMusic" loop :src="config?.basic?.backMusic"></audio>
 
-    <div class="loading-mask" v-if="loading">
-        <div class="spinner"></div>
-        <div>加载幸福讯号...</div>
-    </div>
-
-    <div id="quantum-layer" v-if="!loading && showIntro" @click="handleEnter">
+    <div id="quantum-layer" v-if="showIntro" @click="handleEnter">
         <canvas ref="canvasEl"></canvas>
-        <div class="enter-tip">
-            <div class="pulse-text">点击开启 幸福时刻</div>
-            <div style="margin-top:15px; font-weight:bold; opacity:0.8; color:var(--primary);" v-if="config?.basic">
-                {{ config.basic.groomName }} ❤ {{ config.basic.brideName }}
+        <div class="enter-card" v-if="config?.basic">
+            <div style="font-size: 0.8rem; letter-spacing: 3px; color: var(--primary); margin-bottom: 20px; font-weight: bold;">WELCOME TO OUR WEDDING</div>
+            <div style="font-size: 2.4rem; font-weight: 900; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; color: transparent;">
+                {{ config.basic.groomName }} & {{ config.basic.brideName }}
             </div>
+            <div style="margin: 25px 0; width: 60%; height: 2px; background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent); position: relative;">
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--primary); background: #fff; padding: 0 8px; font-size: 12px;">❤</div>
+            </div>
+            <div style="font-size: 1.2rem; color: #555; letter-spacing: 2px; margin-bottom: 35px; font-weight: 500;">{{ formatDate(config.basic.weddingDate) }}</div>
+            <div style="padding: 12px 40px; border-radius: 30px; background: var(--primary); color: #fff; font-weight: bold; box-shadow: 0 5px 20px rgba(212,63,58,0.3);">见证幸福时刻</div>
         </div>
     </div>
 
     <div id="main-content" v-if="!showIntro && config">
-        <div class="glass-card hero-names">
-            <h1>{{ config.basic?.groomName }} & {{ config.basic?.brideName }}</h1>
-            <div class="hero-info">
-                <p>{{ formatDateDisplay(config.basic?.weddingDate) }}</p>
-                <p style="margin-top:5px;">{{ config.basic?.cityName }} · {{ config.basic?.weddingLocation }}</p>
+        <div class="glass-card" style="text-align: center;">
+            <h1 style="font-size: 2.2rem; margin: 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; color: transparent;">
+                {{ config.basic?.groomName }} & {{ config.basic?.brideName }}
+            </h1>
+            <div style="color: #666; font-size: 0.95rem; margin-top: 10px;">
+                <p>{{ config.basic?.weddingDate?.replace('T', ' ') }}</p>
+                <p>{{ config.basic?.cityName }} · {{ config.basic?.weddingLocation }}</p>
             </div>
         </div>
 
-        <div class="glass-card" v-if="countdown.show">
-            <div class="section-title" style="justify-content:center; margin-bottom:15px; color:#555; font-size:1rem;">
-                距离婚礼还有
+        <div class="glass-card" style="text-align: center;">
+            <div v-if="isWeddingDay" style="padding: 10px;">
+                <div style="font-size: 1.3rem; color: var(--primary); font-weight: bold; letter-spacing: 2px;">🎉 今天是我们结婚的日子 💍</div>
+                <div style="font-size: 0.9rem; color: #888; margin-top: 8px;">感谢您在百忙之中见证我们的幸福时刻</div>
             </div>
-            <div class="countdown-box">
-                <div class="count-item"><div class="count-num">{{countdown.d}}</div><div class="count-label">天</div></div>
-                <div class="count-item"><div class="count-num">{{countdown.h}}</div><div class="count-label">时</div></div>
-                <div class="count-item"><div class="count-num">{{countdown.m}}</div><div class="count-label">分</div></div>
-                <div class="count-item"><div class="count-num">{{countdown.s}}</div><div class="count-label">秒</div></div>
-            </div>
-        </div>
-
-        <div class="glass-card">
-            <h3 class="section-title">婚礼流程</h3>
-            <div class="timeline-box">
-                <div v-for="(node, i) in config.timeline?.timelineNodes" :key="i"
-                     class="timeline-item"
-                     :class="getNodeStatusClass(node)">
-                    <div class="time-dot"></div>
-                    <div class="time-content">
-                        <div class="time-start">{{ node.startTime }}</div>
-                        <div class="time-title">
-                            {{ node.title }}
-                            <span v-if="getNodeStatusClass(node) === 'status-active'" class="live-tag">LIVE</span>
-                        </div>
-                        <div class="time-desc">{{ node.description }}</div>
+            <template v-else-if="countdown.show">
+                <div style="color: #888; margin-bottom: 15px; font-size: 0.9rem;">—— 婚礼倒计时 ——</div>
+                <div style="display: flex; justify-content: space-around;">
+                    <div v-for="(v, k) in {天:countdown.d, 时:countdown.h, 分:countdown.m, 秒:countdown.s}" :key="k">
+                        <div style="font-size: 1.6rem; font-weight: bold; color: var(--primary);">{{v}}</div>
+                        <div style="font-size: 0.75rem; color: #999;">{{k}}</div>
                     </div>
+                </div>
+            </template>
+            <div v-else style="color: var(--primary); font-weight: bold; font-size: 1.1rem;">❤️ 愿爱如初，执手百年</div>
+        </div>
+
+        <div class="glass-card" v-if="config.basic?.posterUrl" style="padding: 10px;">
+            <div class="poster-frame">
+                <img :src="config.basic.posterUrl" class="poster-img">
+                <div style="padding: 15px; color: var(--primary); font-weight: bold; text-align: center; letter-spacing: 1px;">
+                    {{ config.basic?.welcomeDesc }}
                 </div>
             </div>
         </div>
 
-        <div class="glass-card" @click="openAmap" style="text-align:center; padding-bottom: 30px;">
-            <div style="font-size:3.5rem; margin-bottom:5px;">📍</div>
-            <div style="font-weight:bold; font-size:1.2rem; margin-bottom:5px;">{{ config.basic?.weddingLocation }}</div>
-            <div style="font-size:0.9rem; color:#7f8c8d;">{{ config.basic?.address || '点击查看地图位置' }}</div>
-            <div class="nav-btn">高德地图导航</div>
+        <div class="glass-card">
+            <h3 style="color: var(--primary); margin-bottom: 20px; font-size: 1.1rem;">🌸 婚礼行程</h3>
+            <div v-for="(node, i) in config.timeline?.timelineNodes" :key="i"
+                 :class="['timeline-node', getNodeStatusClass(node, i)]">
+                <div class="dot"></div>
+                <div>
+                    <div style="color: var(--primary); font-weight: bold; font-size: 0.85rem;">{{ node.startTime }}</div>
+                    <div style="font-weight: bold; margin: 3px 0; font-size: 1.05rem; display: flex; align-items: center;">
+                        {{ node.title }}
+                        <span v-if="getNodeStatusClass(node, i) === 'status-live'" class="live-tag">LIVE</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #7f8c8d;">{{ node.description }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card" v-if="config.basic?.remind" style="border-left: 5px solid var(--secondary);">
+            <div style="color: var(--primary); font-weight: bold; font-size: 1rem; margin-bottom: 10px; display: flex; align-items: center;">
+                <span style="margin-right: 8px;">✉</span> 温馨提醒
+            </div>
+            <div class="reminder-text">{{ config.basic.remind }}</div>
+        </div>
+
+        <div class="glass-card" style="text-align: center;">
+            <div style="font-size: 1.8rem; margin-bottom: 10px;">📍</div>
+            <div style="font-weight: bold; color: var(--primary); font-size: 1.2rem;">{{ config.basic?.weddingLocation }}</div>
+            <div style="font-size: 0.9rem; color: #888; margin: 10px 0 20px;">{{ config.basic?.address }}</div>
+            <button class="nav-btn" @click="showMapSelector = true">获取地图导航指引</button>
+        </div>
+    </div>
+
+    <div v-if="showMapSelector" class="action-sheet-mask" @click="showMapSelector = false">
+        <div class="action-sheet" @click.stop>
+            <div style="padding: 18px; text-align: center; border-bottom: 1px solid #eee; font-size: 1.1rem; color: #333;" @click="openMap('qq')">腾讯地图</div>
+            <div style="padding: 18px; text-align: center; border-bottom: 1px solid #eee; font-size: 1.1rem; color: #333;" @click="openMap('amap')">高德地图</div>
+            <div style="padding: 15px; text-align: center; color: #999;" @click="showMapSelector = false">取消</div>
         </div>
     </div>
 </div>
@@ -230,73 +201,62 @@
             const config = ref(null);
             const loading = ref(true);
             const showIntro = ref(true);
+            const isPlaying = ref(false);
+            const isWeddingDay = ref(false);
+            const showMapSelector = ref(false);
             const canvasEl = ref(null);
             const bgMusic = ref(null);
             const countdown = reactive({ show: false, d: '00', h: '00', m: '00', s: '00' });
-            let timerInterval = null;
 
-            // --- 🎨 核心：应用动态主题 ---
-            const applyTheme = (theme) => {
-                if (!theme) return;
-                const root = document.documentElement;
+            const formatDate = (s) => s ? s.split('T')[0].replace(/-/g, ' . ') : '';
 
-                // 1. 设置颜色
-                if (theme.colors) {
-                    if (theme.colors.primary) root.style.setProperty('--primary', theme.colors.primary);
-                    if (theme.colors.secondary) root.style.setProperty('--secondary', theme.colors.secondary);
-
-                    // 只有当两个颜色都存在时，才修改背景渐变，否则保持默认暖桃色
-                    if (theme.colors.primary && theme.colors.secondary) {
-                        // 创建一个非常淡的背景渐变 (透明度降低)
-                        // 注意：这里我们用简单的颜色混合逻辑，或者直接信任用户配置的 primary/secondary 作为基调
-                        // 为了防止背景太深看不清字，这里稍微取巧一下，只在 CSS 变量里改
-                    }
-                }
-
-                // 2. 设置字体
-                if (theme.fonts && theme.fonts.main) {
-                    root.style.setProperty('--font-main', theme.fonts.main);
-                }
-
-                // 3. 注入自定义 CSS (这是最强的扩展)
-                if (theme.customCss) {
-                    let styleTag = document.getElementById('custom-theme-css');
-                    if (!styleTag) {
-                        styleTag = document.createElement('style');
-                        styleTag.id = 'custom-theme-css';
-                        document.head.appendChild(styleTag);
-                    }
-                    styleTag.textContent = theme.customCss;
-                }
+            const toggleMusic = () => {
+                if (bgMusic.value.paused) { bgMusic.value.play(); isPlaying.value = true; }
+                else { bgMusic.value.pause(); isPlaying.value = false; }
             };
 
-            const formatDateDisplay = (str) => str ? str.replace('T', ' ') : '';
+            // 🌟 修复后的地图跳转逻辑
+            const openMap = (type) => {
+                const b = config.value?.basic || {};
 
-            const getNodeStatusClass = (node) => {
-                if (!config.value || !config.value.basic || !node.startTime) return 'status-todo';
-                const datePart = config.value.basic.weddingDate.split(/[T\s]/)[0];
-                let fullTimeStr = `${datePart} ${node.startTime}`.replace(/-/g, "/");
-                const diff = new Date() - new Date(fullTimeStr);
-                if (diff > 3600000) return 'status-done';
-                if (diff >= 0 && diff <= 3600000) return 'status-active';
-                return 'status-todo';
+                // 默认坐标（和平饭店）：121.488585, 31.240801
+                let lng = "121.488585";
+                let lat = "31.240801";
+
+                // 如果接口有数据，优先读取接口坐标
+                if (b.mapLocation && b.mapLocation.includes(',')) {
+                    const parts = b.mapLocation.split(',');
+                    lng = parts[0].trim();
+                    lat = parts[1].trim();
+                }
+
+                const name = encodeURIComponent(b.weddingLocation || "婚礼地点");
+
+                if (type === 'qq') {
+                    // 腾讯地图接口：坐标顺序必须是 lat,lng
+                    window.location.href = `https://apis.map.qq.com/uri/v1/geocoder?coord=${lat},${lng}&name=${name}`;
+                } else if (type === 'amap') {
+                    // 高德地图接口：坐标顺序必须是 lng,lat
+                    window.location.href = `https://uri.amap.com/marker?position=${lng},${lat}&name=${name}`;
+                }
+                showMapSelector.value = false;
             };
 
-            const startCountdown = (dateStr) => {
-                const cleanDate = dateStr.replace('T', ' ').replace(/-/g, '/');
-                const targetTime = new Date(cleanDate).getTime();
-                if (isNaN(targetTime)) return;
-                timerInterval = setInterval(() => {
-                    const distance = targetTime - new Date().getTime();
-                    if (distance < 0) { clearInterval(timerInterval); countdown.show = false; return; }
-                    countdown.show = true;
-                    let d = Math.floor(distance / (1000 * 60 * 60 * 24)).toString();
-                    if (d.length < 2) d = '0' + d;
-                    countdown.d = d;
-                    countdown.h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
-                    countdown.m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    countdown.s = Math.floor((distance % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                }, 1000);
+            // 🌟 行程状态判断逻辑
+            const getNodeStatusClass = (node, index) => {
+                if (!config.value?.basic || !node.startTime) return '';
+                const today = config.value.basic.weddingDate.split('T')[0];
+                const nodeTime = new Date(`${today} ${node.startTime}`.replace(/-/g, "/"));
+                const now = new Date();
+
+                const nextNode = config.value.timeline.timelineNodes[index + 1];
+                let nextTime = nextNode
+                        ? new Date(`${today} ${nextNode.startTime}`.replace(/-/g, "/"))
+                        : new Date(nodeTime.getTime() + 3 * 60 * 60 * 1000); // 最后一个环节假定3小时
+
+                if (now > nextTime) return 'status-done';
+                if (now >= nodeTime && now <= nextTime) return 'status-live';
+                return '';
             };
 
             const fetchData = async () => {
@@ -305,86 +265,69 @@
                     const data = await res.json();
                     config.value = data;
 
-                    // 🔥 应用主题
-                    if (data.theme) {
-                        applyTheme(data.theme);
-                    }
+                    if (data.basic) {
+                        // 动态修改标题
+                        document.title = `${data.basic.groomName} ❤️ ${data.basic.brideName}`;
 
-                    if (data.basic?.weddingDate) startCountdown(data.basic.weddingDate);
-                    loading.value = false;
-                    nextTick(() => initParticles());
-                } catch (e) {
-                    // 兜底
-                    config.value = {
-                        basic: { groomName: "新郎", brideName: "新娘", weddingDate: "2026-02-07T10:00", weddingLocation: "婚礼现场" },
-                        timeline: { timelineNodes: [] }
-                    };
+                        const target = new Date(data.basic.weddingDate.replace(/-/g, '/').replace('T', ' ')).getTime();
+                        setInterval(() => {
+                            const now = Date.now();
+                            const dist = target - now;
+
+                            // 判断是否为婚礼当天 (前后24小时窗口)
+                            if (dist <= 43200000 && dist > -86400000) {
+                                isWeddingDay.value = true;
+                                countdown.show = false;
+                            } else if (dist > 43200000) {
+                                isWeddingDay.value = false;
+                                countdown.show = true;
+                                countdown.d = Math.floor(dist/86400000).toString().padStart(2,'0');
+                                countdown.h = Math.floor((dist%86400000)/3600000).toString().padStart(2,'0');
+                                countdown.m = Math.floor((dist%3600000)/60000).toString().padStart(2,'0');
+                                countdown.s = Math.floor((dist%60000)/1000).toString().padStart(2,'0');
+                            }
+                        }, 1000);
+                    }
+                } catch(e) {
+                    console.error("加载失败", e);
+                } finally {
                     loading.value = false;
                     nextTick(() => initParticles());
                 }
             };
 
             const initParticles = () => {
-                const canvas = canvasEl.value;
-                if (!canvas) return;
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
+                const canvas = canvasEl.value; if (!canvas) return;
+                canvas.width = window.innerWidth; canvas.height = window.innerHeight;
                 const ctx = canvas.getContext('2d');
-
-                // 粒子颜色也尝试从 CSS 变量拿，或者使用默认组
-                // 这里为了稳妥，我们定义一组好看的配色，不完全依赖 theme，防止用户配出看不清的颜色
-                const colors = ['#e74c3c', '#f1c40f', '#ffffff', '#ff9a9e'];
-
-                let particles = Array.from({length: 60}, () => ({
-                    x: canvas.width/2, y: canvas.height/2,
-                    vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
-                    color: colors[Math.floor(Math.random()*colors.length)],
-                    size: Math.random()*3+1
-                }));
-                function animate() {
-                    if(!showIntro.value) return;
-                    ctx.fillStyle = 'rgba(255, 230, 230, 0.15)'; // 淡粉色拖尾，更喜庆
-                    ctx.fillRect(0,0,canvas.width,canvas.height);
-                    particles.forEach(p => {
-                        p.x += p.vx; p.y += p.vy;
-                        if(p.x<0||p.x>canvas.width) p.vx*=-1;
-                        if(p.y<0||p.y>canvas.height) p.vy*=-1;
-                        ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                        ctx.fillStyle = p.color; ctx.fill();
-                    });
-                    requestAnimationFrame(animate);
+                let pts = Array.from({length: 22}, () => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: Math.random()-0.5, vy: Math.random()-0.5, size: Math.random()*2+1 }));
+                function anim() {
+                    if(!showIntro.value) return; ctx.clearRect(0,0,canvas.width,canvas.height);
+                    pts.forEach(p => { p.x+=p.vx; p.y+=p.vy; if(p.x<0||p.x>canvas.width) p.vx*=-1; if(p.y<0||p.y>canvas.height) p.vy*=-1; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fillStyle = 'rgba(212, 63, 58, 0.2)'; ctx.fill(); });
+                    requestAnimationFrame(anim);
                 }
-                animate();
+                anim();
             };
 
             const handleEnter = () => {
-                if(bgMusic.value) bgMusic.value.play().catch(()=>{});
-                document.body.style.overflow = 'auto';
-                if (typeof gsap !== 'undefined') {
-                    gsap.to('#quantum-layer', { opacity: 0, duration: 0.8, onComplete: () => { showIntro.value = false; }});
-                } else {
-                    showIntro.value = false;
-                }
+                if(bgMusic.value) bgMusic.value.play().then(()=>isPlaying.value=true).catch(()=>{});
+                gsap.to('#quantum-layer', { opacity: 0, duration: 0.8, onComplete: () => {
+                        showIntro.value = false;
+                        document.body.style.overflow = 'auto';
+                        // 进入后自动寻找 LIVE 环节并滚动
+                        nextTick(() => {
+                            setTimeout(() => {
+                                const live = document.querySelector('.status-live');
+                                if (live) live.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 500);
+                        });
+                    }});
             };
 
-            const openAmap = () => {
-                const basic = config.value?.basic || {};
-                const locStr = basic.mapLocation || "113.695495,26.646221";
-                const parts = locStr.split(',');
-                const lng = parts[0]; const lat = parts[1];
-                const name = basic.weddingLocation || "婚礼现场";
-                const amapUrl = `https://uri.amap.com/marker?position=${lng},${lat}&name=${encodeURIComponent(name)}`;
-                window.location.href = amapUrl;
-            };
-
-            onMounted(() => fetchData());
-
-            return { loading, showIntro, config, canvasEl, bgMusic, countdown, getNodeStatusClass, handleEnter, openAmap, formatDateDisplay };
+            onMounted(fetchData);
+            return { loading, showIntro, config, canvasEl, bgMusic, countdown, isPlaying, isWeddingDay, showMapSelector, handleEnter, openMap, formatDate, toggleMusic, getNodeStatusClass };
         }
     }).mount('#app');
 </script>
 </body>
 </html>
-
-

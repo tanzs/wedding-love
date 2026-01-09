@@ -55,12 +55,30 @@ spec:
           name: backMusic
           label: 背景音乐
           value: "https://img.aiym.fun:8888/halo/M500002z7S8T0JoS9W.mp3"
-          placeholder: 请输入背景音乐URL或者选择附近中音乐
+          placeholder: 请输入背景音乐URL或者选择附件中音乐
+        - $formkit: attachment
+          id: posterUrl
+          name: posterUrl
+          label: 海报
+          value: ""
+          placeholder: 请输入背景海报URL或者选择附件中图片
+        - $formkit: text
+          id: welcomeDesc
+          name: welcomeDesc
+          label: 海报描述
+          value: "良辰已至，喜宴将开"
+          placeholder: 请输入海报下方欢迎描述
+        - $formkit: text
+          id: remind
+          name: remind
+          label: 温馨提醒
+          value: "期待您的到来"
+          placeholder: 请输入海报下方欢迎描述
         - $formkit: text
           id: mapLocation
           name: mapLocation
           label: 地图位置（经度,纬度）
-          placeholder: "例如: 116.397128,39.916527"
+          placeholder: "例如: 121.488585,31.240801"
           value: ""
         - $formkit: radio
           id: enableWeather
