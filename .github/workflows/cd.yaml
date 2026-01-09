@@ -3,18 +3,17 @@ name: CD
 on:
   release:
     types:
-      - published
+      - published # 当你手动发布 release 时也触发
+  workflow_dispatch: # 允许你在 GitHub 界面上手动点按钮触发打包
 
 jobs:
   cd:
     uses: halo-sigs/reusable-workflows/.github/workflows/plugin-cd.yaml@v3
     permissions:
-      contents: write
+      contents: write # 必须有这个权限才能创建 Release 并上传 JAR
     with:
       ui-path: "ui"
       pnpm-version: 9
       node-version: 22
       java-version: 21
-      # Remove skip-appstore-release and set app-id if you want to release to the App Store
-      skip-appstore-release: true
-      # app-id: app-xyz
+      skip-appstore-release: true # 自动打包建议先设为 true，避免频繁推送应用市场
